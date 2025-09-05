@@ -14,9 +14,33 @@ import java.util.ListIterator;
 import java.util.Map;
 
 public class Parser {
-    public Expression parse(final ListIterator<Token> tokens) {
-        return parseExpression(tokens, new HashMap<>());
-    }
+	private static boolean skipToNextSubExpression(ListIterator<Token> tokens) {
+		if (tokens.hasNext()) {
+			final Token token = tokens.next();
+			if (token instanceof Space) {
+				return true;
+			}
+
+			// These tokens may be future sub-expressions for application
+			if (token instanceof LeftParen || token instanceof VariableToken || token instanceof Lambda) {
+				tokens.previous();
+				return true;
+			}
+
+			tokens.previous();
+			return false;
+		}
+		return false;
+	}
+
+	public Expression parse(final ListIterator<Token> tokens) {
+		final Expression expr = parseExpression(tokens, new HashMap<>());
+		if (tokens.hasNext()) {
+			return null;
+		}
+
+		return expr;
+	}
 
     private Expression parseExpression(final ListIterator<Token> tokens, final Map<String, Variable> boundVariables) {
         if (!tokens.hasNext()) return null;
@@ -126,17 +150,6 @@ public class Parser {
             return result;
         }
         return expressions.getFirst();
-    }
-
-    private static boolean consumeIfSpace(ListIterator<Token> tokens) {
-        if (tokens.hasNext()) {
-            final Token token = tokens.next();
-            if (token instanceof Tokenizer.Space) {
-                return true;
-            }
-            tokens.previous();
-        }
-        return false;
     }
 
 }
